@@ -448,13 +448,21 @@ def get_visa_requirements(nationality: str, destination: str) -> str:
 
 final_answer = FinalAnswerTool()
 
-# Model initialization
+# # Model initialization
+# model = HfApiModel(
+#     max_tokens=2096,
+#     temperature=0.7,  # Slightly higher temperature for more creative responses
+#     model_id='Qwen/Qwen2.5-Coder-32B-Instruct',
+#     custom_role_conversions=None,
+# )
+
 model = HfApiModel(
     max_tokens=2096,
     temperature=0.7,  # Slightly higher temperature for more creative responses
-    model_id='Qwen/Qwen2.5-Coder-32B-Instruct',
+    model_id='https://pflgm2locj2t89co.us-east-1.aws.endpoints.huggingface.cloud',  # Use the AWS endpoint
     custom_role_conversions=None,
 )
+
 
 # Load prompts
 with open("prompts.yaml", 'r') as stream:
