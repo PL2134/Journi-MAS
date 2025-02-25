@@ -1,5 +1,26 @@
-markdownify
-smolagents
-requests
-duckduckgo_search
-pandas
+# Core libraries
+smolagents>=0.0.5
+requests>=2.28.0
+pandas>=1.5.0
+pytz>=2023.3
+PyYAML>=6.0
+duckduckgo_search>=4.1.0
+
+# UI and visualization
+gradio>=3.50.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Date and time handling
+python-dateutil>=2.8.2
+
+# Text processing
+markdownify>=0.11.0
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+
+# Optional but recommended for expanded functionality
+googletrans-py>=4.0.0  # For translation if implemented
+wikipedia>=1.4.0       # For destination information
+pillow>=10.0.0         # For image processing if needed
+countryinfo>=0.1.2     # For country data
