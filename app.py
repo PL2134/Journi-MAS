@@ -97,21 +97,7 @@ agent = CodeAgent(
     planning_interval=None,
     name="Journi",
     description="Your AI travel companion",
-    prompt_templates=prompt_templates,
-    authorized_imports=[
-        "unicodedata",
-        "stat",
-        "datetime",
-        "random",
-        "pandas",
-        "itertools", 
-        "math",
-        "statistics",
-        "queue",
-        "time",
-        "collections",
-        "re"
-    ]
+    prompt_templates=prompt_templates
 )
 
 # Launch the UI
