@@ -10,7 +10,7 @@ class GetWeatherForecastTool(Tool):
     description = "Gets the weather forecast for a travel destination."
     inputs = {
         'destination': {'type': 'string', 'description': 'City or location name'},
-        'days': {'type': 'integer', 'description': 'Number of days to forecast (default: 3)'}
+        'days': {'type': 'integer', 'description': 'Number of days to forecast (default: 3)', 'nullable': True}
     }
     output_type = "string"
 
