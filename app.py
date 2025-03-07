@@ -55,47 +55,41 @@ def initialize_tools():
         'search_accommodations': SearchAccommodationsTool(max_results=8),
     }
 
-# ==================== PROMPT TEMPLATES ====================
+# ==================== COORDINATOR PROMPT ====================
 
-def load_prompt_templates():
-    """Load prompt templates from YAML file."""
-    try:
-        with open("prompts.yaml", 'r') as stream:
-            prompt_templates = yaml.safe_load(stream)
-    except FileNotFoundError:
-        prompt_templates = {}
-        print("Warning: prompts.yaml not found. Using default prompt templates.")
+def get_coordinator_prompt():
+    """Get the specialized prompt for the coordinator agent."""
+    return """
+    You are the Coordinator Agent for Journi, a multi-agent AI travel companion system.
+    Your role is to understand the user's travel request, break it down into sub-tasks,
+    and delegate these tasks to the appropriate specialized agents.
     
-    # Add travel companion specific instructions to the prompt templates
-    travel_agent_prompt = """
-    You are part of Journi, a multi-agent AI travel companion system designed to help travelers plan and navigate their journeys.
-    Your goal is to provide helpful, accurate information about destinations, local customs, and practical travel advice.
-
-    You have access to these capabilities:
-    1. Search for travel information online
-    2. Visit webpages to get detailed information
-    3. Provide vivid descriptions of travel destinations
-    4. Check local time at travel destinations
-    5. Provide weather forecasts for trip planning
-    6. Convert currencies for travel budgeting
-    7. Translate common travel phrases
-    8. Check visa requirements
-    9. Search for real accommodation options with filters for budget, style, and location
-
-    When users ask about a destination, try to provide comprehensive information by combining multiple tools.
-    For example, if someone asks about Tokyo, consider providing the local time, weather, real accommodation search results, and a descriptive preview.
-
-    Always be enthusiastic about travel while remaining practical and informative.
-    Suggest off-the-beaten-path experiences when appropriate, but prioritize the specific information requested.
+    You have access to these specialized agents:
+    1. information_retrieval_agent - For web search and visiting webpages
+    2. language_culture_agent - For translations and cultural information
+    3. logistics_agent - For time, weather, visas, and currency
+    4. recommendation_agent - For destination previews, accommodation searches, and activities
+    
+    IMPORTANT: To delegate a task to a managed agent, use this format:
+    ```python
+    result = managed_agent(task="Your detailed task description here")
+    print(result)
+    ```
+    
+    For example:
+    ```python
+    info = information_retrieval_agent(task="Find the best time to visit Kyoto")
+    print(info)
+    ```
+    
+    Your overall task is to:
+    1. Analyze the user's request to determine what information they need
+    2. Delegate appropriate tasks to the specialized agents using the correct format
+    3. Combine the responses into a well-structured, comprehensive answer
+    4. Use the final_answer tool to return the complete response to the user
+    
+    Remember to provide a thorough, enthusiastic response that covers all aspects of the user's travel query.
     """
-
-    # Add the travel agent prompt to the existing templates
-    if "system_prompt" in prompt_templates:
-        prompt_templates["system_prompt"] = travel_agent_prompt + "\n\n" + prompt_templates.get("system_prompt", "")
-    else:
-        prompt_templates["system_prompt"] = travel_agent_prompt
-    
-    return prompt_templates
 
 # ==================== MULTI-AGENT SYSTEM SETUP ====================
 
@@ -106,22 +100,21 @@ def create_multi_agent_system():
     """
     model = create_model()
     tools = initialize_tools()
-    prompt_templates = load_prompt_templates()
     
-    # Create specialized agents - following the documentation example
-    web_agent = CodeAgent(
+    # Create specialized agents with corrected names matching what will be used in calls
+    information_retrieval_agent = CodeAgent(
         model=model,
         tools=[tools['web_search'], tools['visit_webpage']],
         max_steps=3,
-        name="Information Retrieval Agent",
+        name="information_retrieval_agent",
         description="Finds and extracts relevant travel information from the web",
     )
     
-    language_agent = CodeAgent(
+    language_culture_agent = CodeAgent(
         model=model,
         tools=[tools['translate_phrase']],
         max_steps=2,
-        name="Language & Culture Agent",
+        name="language_culture_agent",
         description="Provides language assistance and cultural context for travelers",
     )
     
@@ -134,7 +127,7 @@ def create_multi_agent_system():
             tools['convert_currency']
         ],
         max_steps=4,
-        name="Logistics Agent",
+        name="logistics_agent",
         description="Manages practical travel information",
     )
     
@@ -142,19 +135,21 @@ def create_multi_agent_system():
         model=model,
         tools=[tools['generate_destination_preview'], tools['search_accommodations']],
         max_steps=3,
-        name="Recommendation Agent",
+        name="recommendation_agent",
         description="Creates destination descriptions, searches real accommodations, and suggests activities",
     )
     
-    # Create coordinator agent with access to specialized agents as a list
+    # Create coordinator agent with custom prompt and managed agents
+    system_prompt = get_coordinator_prompt()
+    
     coordinator_agent = CodeAgent(
         model=model,
         tools=[tools['final_answer']],
-        managed_agents=[web_agent, language_agent, logistics_agent, recommendation_agent],
-        max_steps=5,
-        name="Journi Coordinator",
+        managed_agents=[information_retrieval_agent, language_culture_agent, logistics_agent, recommendation_agent],
+        max_steps=8,
+        name="Journi",
         description="Your AI Travel Companion",
-        prompt_templates=prompt_templates,
+        system_prompt=system_prompt
     )
     
     return coordinator_agent
