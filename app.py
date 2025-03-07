@@ -55,11 +55,11 @@ def initialize_tools():
         'search_accommodations': SearchAccommodationsTool(max_results=8),
     }
 
-# ==================== COORDINATOR PROMPT ====================
+# ==================== PROMPT TEMPLATES ====================
 
-def get_coordinator_prompt():
-    """Get the specialized prompt for the coordinator agent."""
-    return """
+def create_coordinator_prompt_templates():
+    """Create prompt templates with coordinator-specific instructions."""
+    system_prompt = """
     You are the Coordinator Agent for Journi, a multi-agent AI travel companion system.
     Your role is to understand the user's travel request, break it down into sub-tasks,
     and delegate these tasks to the appropriate specialized agents.
@@ -72,7 +72,7 @@ def get_coordinator_prompt():
     
     IMPORTANT: To delegate a task to a managed agent, use this format:
     ```python
-    result = managed_agent(task="Your detailed task description here")
+    result = information_retrieval_agent(task="Your detailed task description here")
     print(result)
     ```
     
@@ -90,6 +90,8 @@ def get_coordinator_prompt():
     
     Remember to provide a thorough, enthusiastic response that covers all aspects of the user's travel query.
     """
+    
+    return {"system_prompt": system_prompt}
 
 # ==================== MULTI-AGENT SYSTEM SETUP ====================
 
@@ -139,8 +141,8 @@ def create_multi_agent_system():
         description="Creates destination descriptions, searches real accommodations, and suggests activities",
     )
     
-    # Create coordinator agent with custom prompt and managed agents
-    system_prompt = get_coordinator_prompt()
+    # Create coordinator agent with custom prompt templates and managed agents
+    prompt_templates = create_coordinator_prompt_templates()
     
     coordinator_agent = CodeAgent(
         model=model,
@@ -149,7 +151,7 @@ def create_multi_agent_system():
         max_steps=8,
         name="Journi",
         description="Your AI Travel Companion",
-        system_prompt=system_prompt
+        prompt_templates=prompt_templates
     )
     
     return coordinator_agent
