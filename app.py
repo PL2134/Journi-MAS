@@ -10,7 +10,6 @@
 # 5. Recommendation Agent - Creates destination descriptions, accommodation recommendations, and activity suggestions
 
 from smolagents import CodeAgent, HfApiModel, load_tool
-from smolagents.agents import HumanAgent
 import datetime
 import yaml
 import os
@@ -27,13 +26,6 @@ from tools.convert_currency import ConvertCurrencyTool
 from tools.translate_phrase import TranslatePhraseTool
 from tools.get_visa_requirements import GetVisaRequirementsTool
 from tools.search_accommodations import SearchAccommodationsTool
-
-# Agent module imports
-from agents.coordinator_agent import CoordinatorAgent
-from agents.information_retrieval_agent import InformationRetrievalAgent
-from agents.language_culture_agent import LanguageCultureAgent
-from agents.logistics_agent import LogisticsAgent
-from agents.recommendation_agent import RecommendationAgent
 
 # ==================== SHARED MODEL SETUP ====================
 
@@ -116,22 +108,24 @@ def create_multi_agent_system():
     tools = initialize_tools()
     prompt_templates = load_prompt_templates()
     
-    # Create specialized agents
-    information_retrieval_agent = InformationRetrievalAgent(
+    # Create specialized agents - following the documentation example
+    web_agent = CodeAgent(
         model=model,
         tools=[tools['web_search'], tools['visit_webpage']],
-        prompt_templates=prompt_templates,
-        max_steps=3
+        max_steps=3,
+        name="Information Retrieval Agent",
+        description="Finds and extracts relevant travel information from the web",
     )
     
-    language_culture_agent = LanguageCultureAgent(
+    language_agent = CodeAgent(
         model=model,
         tools=[tools['translate_phrase']],
-        prompt_templates=prompt_templates,
-        max_steps=2
+        max_steps=2,
+        name="Language & Culture Agent",
+        description="Provides language assistance and cultural context for travelers",
     )
     
-    logistics_agent = LogisticsAgent(
+    logistics_agent = CodeAgent(
         model=model,
         tools=[
             tools['get_local_time'], 
@@ -139,36 +133,28 @@ def create_multi_agent_system():
             tools['get_visa_requirements'],
             tools['convert_currency']
         ],
-        prompt_templates=prompt_templates,
-        max_steps=4
+        max_steps=4,
+        name="Logistics Agent",
+        description="Manages practical travel information",
     )
     
-    recommendation_agent = RecommendationAgent(
+    recommendation_agent = CodeAgent(
         model=model,
         tools=[tools['generate_destination_preview'], tools['search_accommodations']],
-        prompt_templates=prompt_templates,
-        max_steps=3
+        max_steps=3,
+        name="Recommendation Agent",
+        description="Creates destination descriptions, searches real accommodations, and suggests activities",
     )
     
-    # Create managed agents wrapped as HumanAgent objects
-    managed_agents = {
-        'information_retrieval': HumanAgent(name="Information Retrieval Agent", 
-                                           description="Finds and extracts relevant travel information from the web"),
-        'language_culture': HumanAgent(name="Language & Culture Agent", 
-                                      description="Provides language assistance and cultural context for travelers"),
-        'logistics': HumanAgent(name="Logistics Agent", 
-                               description="Manages practical travel information"),
-        'recommendation': HumanAgent(name="Recommendation Agent", 
-                                    description="Creates destination descriptions, searches real accommodations, and suggests activities")
-    }
-    
-    # Create coordinator agent with access to all specialized agents
-    coordinator_agent = CoordinatorAgent(
+    # Create coordinator agent with access to specialized agents as a list
+    coordinator_agent = CodeAgent(
         model=model,
         tools=[tools['final_answer']],
-        prompt_templates=prompt_templates,
+        managed_agents=[web_agent, language_agent, logistics_agent, recommendation_agent],
         max_steps=5,
-        managed_agents=managed_agents
+        name="Journi Coordinator",
+        description="Your AI Travel Companion",
+        prompt_templates=prompt_templates,
     )
     
     return coordinator_agent
