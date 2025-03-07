@@ -1,5 +1,5 @@
 ---
-title: Journi - Your AI Travel Companion
+title: Journi - Your Multi-Agent AI Travel Companion
 emoji: 🧳
 colorFrom: blue
 colorTo: indigo
@@ -15,13 +15,14 @@ tags:
   - agent-course
 ---
 
-# Journi: Your AI Travel Companion
+# Journi: Your Multi-Agent AI Travel Companion
 
-Journi is an intelligent travel assistant that helps you plan and navigate your journeys with ease. Get vivid destination descriptions, local time information, weather forecasts, currency conversions, language translations, and visa requirement details—all in one place.
+Journi is an intelligent multi-agent travel assistant that helps you plan and navigate your journeys with ease. Get vivid destination descriptions, accommodation recommendations, local time information, weather forecasts, currency conversions, language translations, and visa requirement details—all in one place.
 
 ## Features
 
 - **Destination Descriptions**: Experience rich textual portrayals of travel destinations that bring locations to life
+- **Real Accommodation Search**: Search for available accommodations with filters for budget, style, and location
 - **Web Search**: Find up-to-date travel information from across the internet
 - **Local Time Checker**: Know the current time at any destination around the world
 - **Weather Forecasts**: Get detailed weather information with smart packing tips
@@ -33,6 +34,7 @@ Journi is an intelligent travel assistant that helps you plan and navigate your 
 
 Simply ask Journi questions about your travel plans like:
 - "Describe what Bali looks like and tell me the best time to visit"
+- "Find me mid-range hotels in Tokyo near Shinjuku"
 - "What's the local time in Paris right now?"
 - "What should I pack for Tokyo next week based on the weather?"
 - "How much is 500 USD worth in Japanese Yen?"
@@ -42,21 +44,35 @@ Simply ask Journi questions about your travel plans like:
 
 ## How It Works
 
-Journi uses a combination of specialized tools to provide comprehensive travel assistance:
+Journi uses a multi-agent architecture powered by SmolaAgents:
 
-1. **Destination Preview Tool**: Creates detailed, evocative descriptions of destinations with atmospheric variations (sunrise, sunset, seasonal changes)
-2. **Time Zone Database**: Contains mappings for major cities worldwide to provide accurate local times
-3. **Weather Simulation**: Generates realistic weather forecasts with practical packing recommendations
-4. **Currency Conversion**: Offers approximate exchange rates for major world currencies
-5. **Phrase Dictionary**: Includes common travel phrases in 10 languages with pronunciation guides
-6. **Visa Information**: Provides basic entry requirement data for common travel routes
+1. **Coordinator Agent**: Orchestrates the workflow and delegates specialized tasks
+   - Tools: `final_answer_tool` (Compiles and formats the final response)
+
+2. **Information Retrieval Agent**: Searches and extracts relevant travel information
+   - Tools: `web_search` (DuckDuckGo search), `visit_webpage` (Extracts content from websites)
+
+3. **Language & Culture Agent**: Provides translations and cultural context
+   - Tools: `translate_phrase` (Translates common travel phrases with pronunciation guides)
+
+4. **Logistics Agent**: Manages practical travel information 
+   - Tools: `get_local_time` (Checks current time at destinations), `get_weather_forecast` (Provides weather information with packing tips), `get_visa_requirements` (Checks entry requirements), `convert_currency` (Performs currency conversions)
+
+5. **Recommendation Agent**: Creates destination descriptions, searches real accommodations, and suggests activities
+   - Tools: `generate_destination_preview` (Creates vivid textual descriptions of destinations), `search_accommodations` (Searches for real accommodation options with filters)
+
+Each specialized agent contributes its expertise to create comprehensive travel guidance. The multi-agent approach allows for specialized handling of different travel planning aspects, resulting in more detailed and helpful recommendations.
 
 ## Built With
 
-- [SmolaAgents](https://github.com/smol-ai/agent) - Small, efficient agent framework
+- [SmolaAgents](https://github.com/smol-ai/agent) - Small, efficient agent framework for building multi-agent systems
 - [Hugging Face](https://huggingface.co) - For language model capabilities
 - [Gradio](https://gradio.app) - For the user interface
+- [DuckDuckGo Search](https://pypi.org/project/duckduckgo-search/) - For web search capabilities
+- [PyTZ](https://pypi.org/project/pytz/) - For timezone handling
 
 ## About
 
-Journi was created to enhance the travel planning experience by providing accurate, comprehensive travel information in a conversational format. The agent uses advanced AI to understand your needs and deliver personalized travel assistance.
+Journi was created to enhance the travel planning experience by providing accurate, comprehensive travel information in a conversational format. The multi-agent architecture allows for specialized expertise in different aspects of travel planning, resulting in more detailed and helpful recommendations.
+
+By delegating tasks to specialized agents, Journi can handle complex travel queries that span multiple domains (logistics, language, recommendations, etc.) in a more efficient and structured way than a single-agent approach.
