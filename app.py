@@ -10,6 +10,7 @@
 # 5. Recommendation Agent - Creates destination descriptions, accommodation recommendations, and activity suggestions
 
 from smolagents import CodeAgent, HfApiModel, load_tool
+from smolagents.agents import HumanAgent
 import datetime
 import yaml
 import os
@@ -146,10 +147,20 @@ def create_multi_agent_system():
         model=model,
         tools=[tools['generate_destination_preview'], tools['search_accommodations']],
         prompt_templates=prompt_templates,
-        max_steps=3,  # Increased steps to allow for accommodation searches
-        name="Recommendation Agent",
-        description="Creates destination descriptions, searches real accommodations, and suggests activities"
+        max_steps=3
     )
+    
+    # Create managed agents wrapped as HumanAgent objects
+    managed_agents = {
+        'information_retrieval': HumanAgent(name="Information Retrieval Agent", 
+                                           description="Finds and extracts relevant travel information from the web"),
+        'language_culture': HumanAgent(name="Language & Culture Agent", 
+                                      description="Provides language assistance and cultural context for travelers"),
+        'logistics': HumanAgent(name="Logistics Agent", 
+                               description="Manages practical travel information"),
+        'recommendation': HumanAgent(name="Recommendation Agent", 
+                                    description="Creates destination descriptions, searches real accommodations, and suggests activities")
+    }
     
     # Create coordinator agent with access to all specialized agents
     coordinator_agent = CoordinatorAgent(
@@ -157,12 +168,7 @@ def create_multi_agent_system():
         tools=[tools['final_answer']],
         prompt_templates=prompt_templates,
         max_steps=5,
-        managed_agents={
-            'information_retrieval': information_retrieval_agent,
-            'language_culture': language_culture_agent,
-            'logistics': logistics_agent,
-            'recommendation': recommendation_agent
-        }
+        managed_agents=managed_agents
     )
     
     return coordinator_agent
