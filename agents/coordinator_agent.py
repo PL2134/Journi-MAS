@@ -1,5 +1,4 @@
 from smolagents import CodeAgent
-from smolagents.agents import AgentText
 from typing import Dict, List, Optional, Any
 
 class CoordinatorAgent(CodeAgent):
