@@ -88,6 +88,15 @@ def create_coordinator_prompt_templates():
     3. Combine the responses into a well-structured, comprehensive answer
     4. Use the final_answer tool to return the complete response to the user
     
+    CRITICAL: When providing the final answer, you MUST use the final_answer tool inside a code block with the correct format:
+    ```python
+    comprehensive_answer = "Your detailed travel information here"
+    final_answer(comprehensive_answer)
+    ```<end_code>
+    
+    ALWAYS end your code blocks with ```<end_code> - this is essential to properly execute your code.
+    NEVER try to provide a direct text response without using the final_answer tool in code.
+    
     Remember to provide a thorough, enthusiastic response that covers all aspects of the user's travel query.
     """
     
