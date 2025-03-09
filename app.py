@@ -20,7 +20,7 @@ from Gradio_UI import GradioUI
 from tools.final_answer_tool import FinalAnswerTool
 from tools.web_search import DuckDuckGoSearchTool
 from tools.visit_webpage import VisitWebpageTool
-from tools.generate_destination_preview import GenerateDestinationPreviewTool
+from tools.generate_image_tool import GenerateImageTool
 from tools.get_local_time import GetLocalTimeTool
 from tools.get_weather_forecast import GetWeatherForecastTool
 from tools.convert_currency import ConvertCurrencyTool
