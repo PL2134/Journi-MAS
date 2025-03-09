@@ -12,6 +12,10 @@ class FinalAnswerTool(Tool):
         super().__init__()
 
     def forward(self, answer: Any) -> Any:
+        # Direct handling for AgentImage objects
+        if isinstance(answer, AgentImage):
+            return answer
+            
         # Handle image dictionary from GenerateDestinationPreviewTool
         if isinstance(answer, dict) and 'image' in answer and isinstance(answer['image'], AgentImage):
             image = answer['image']
@@ -23,8 +27,30 @@ class FinalAnswerTool(Tool):
         
         # Check if the answer is an image path
         elif isinstance(answer, str) and ('/tmp/gradio/' in answer or answer.endswith(('.png', '.jpg', '.jpeg', '.webp'))):
-            # Return as AgentImage for proper handling
-            return AgentImage(answer)
+            # Extract destination from the path if possible
+            destination = "destination"
+            path_parts = answer.split('/')
+            if len(path_parts) > 0:
+                # Try to extract something meaningful from the filename
+                filename = path_parts[-1].lower()
+                if 'japan' in filename:
+                    destination = 'Japan'
+                elif 'paris' in filename:
+                    destination = 'Paris'
+                elif 'tokyo' in filename:
+                    destination = 'Tokyo'
+                elif 'york' in filename:
+                    destination = 'New York'
+                elif 'london' in filename:
+                    destination = 'London'
+                elif 'rome' in filename:
+                    destination = 'Rome'
+                # Add more destinations as needed
+            
+            # Create image with caption
+            image = AgentImage(answer)
+            caption = f"✨ Visual preview of {destination} ✨"
+            return f"{caption}\n\n{image.to_string()}"
             
         # Format text answers for better readability (keep existing behavior)
         elif isinstance(answer, str):
