@@ -78,24 +78,27 @@ def create_coordinator_prompt_templates():
     1. When the user explicitly asks for an image/picture of a place
     2. When the user expresses they want to go to/visit/travel to a specific destination
     
-    For destination queries, ALWAYS include an image, but do it in a SINGLE final_answer call:
+    For any destination query, identify the exact destination name that the user mentioned and use this exact format:
     ```python
-    # First generate the image
-    destination_image = generate_image(prompt="[destination name], iconic landmarks, distinctive scenery")
+    # Extract the specific destination from user query
+    destination = "Exact destination name from user query"  # e.g., "Paris", "Taiwan", "New York City"
     
-    # Then gather detailed information
-    info = information_retrieval_agent(task="Find key information about [destination]")
-    weather = logistics_agent(task="Get weather information for [destination]")
-    visa_info = logistics_agent(task="Get visa requirements for [destination]")
-    currency_info = logistics_agent(task="Get currency information for [destination]")
-    cultural_info = language_culture_agent(task="Provide cultural information about [destination]")
-    recommendations = recommendation_agent(task="Recommend top destinations and activities in [destination]")
+    # First generate the image with specific destination
+    destination_image = generate_image(prompt=destination)
+    
+    # Then gather detailed information using the exact same destination name
+    info = information_retrieval_agent(task=f"Find key information about {destination}")
+    weather = logistics_agent(task=f"Get weather information for {destination}")
+    visa_info = logistics_agent(task=f"Get visa requirements for {destination}")
+    currency_info = logistics_agent(task=f"Get currency information for {destination}")
+    cultural_info = language_culture_agent(task=f"Provide cultural information about {destination}")
+    recommendations = recommendation_agent(task=f"Recommend top destinations and activities in {destination}")
     
     # Combine everything in ONE final_answer call
-    comprehensive_answer = f\"\"\"
-    ![Visual preview of {destination_image}]({destination_image})
+    comprehensive_answer = f"""
+    {destination_image}
     
-    ## Welcome to [Destination]!
+    ## Welcome to {destination}!
     
     Here's what you should know about visiting:
     
@@ -116,8 +119,8 @@ def create_coordinator_prompt_templates():
     ### Top Destinations and Activities:
     {recommendations}
     
-    [Destination] is a wonderful place to visit with its unique attractions and experiences. Enjoy your trip!
-    \"\"\"
+    {destination} is a wonderful place to visit with its unique attractions and experiences. Enjoy your trip!
+    """
     final_answer(comprehensive_answer)
     ```
     
