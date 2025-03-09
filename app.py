@@ -94,33 +94,33 @@ def create_coordinator_prompt_templates():
     cultural_info = language_culture_agent(task=f"Provide cultural information about {destination}")
     recommendations = recommendation_agent(task=f"Recommend top destinations and activities in {destination}")
     
-    # Combine everything in ONE final_answer call
-    comprehensive_answer = f"""
-    {destination_image}
+    # Combine everything in ONE final_answer call using triple quotes
+    comprehensive_answer = f'''
+    {{destination_image}}
     
-    ## Welcome to {destination}!
+    ## Welcome to {{destination}}!
     
     Here's what you should know about visiting:
     
-    {info}
+    {{info}}
     
     ### Weather Information:
-    {weather}
+    {{weather}}
     
     ### Visa Requirements:
-    {visa_info}
+    {{visa_info}}
     
     ### Currency:
-    {currency_info}
+    {{currency_info}}
     
     ### Cultural Information:
-    {cultural_info}
+    {{cultural_info}}
     
     ### Top Destinations and Activities:
-    {recommendations}
+    {{recommendations}}
     
-    {destination} is a wonderful place to visit with its unique attractions and experiences. Enjoy your trip!
-    """
+    {{destination}} is a wonderful place to visit with its unique attractions and experiences. Enjoy your trip!
+    '''
     final_answer(comprehensive_answer)
     ```
     
