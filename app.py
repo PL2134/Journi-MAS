@@ -3,13 +3,12 @@
 # comprehensive travel planning and information gathering, with step-by-step display.
 
 from smolagents import CodeAgent, HfApiModel, load_tool
-from smolagents import Tool as SmolTool
 import datetime
 import yaml
 import os
 from Gradio_UI import GradioUI
 
-# Tool imports
+# Tool imports - using the exact filenames available in the tools directory
 from tools.final_answer_tool import FinalAnswerTool
 from tools.web_search import DuckDuckGoSearchTool
 from tools.visit_webpage import VisitWebpageTool
@@ -70,9 +69,16 @@ def create_coordinator_prompt_templates():
     IMPORTANT: Your output should be step-by-step, showing progress at each stage. Each step should be
     self-contained and include your thought process before executing the code.
     
-    For any destination query, identify the exact destination name and follow this step-by-step approach:
+    When a user expresses interest in a destination, follow this step-by-step approach:
     
-    STEP 1: Start with generating a destination image and gathering key information
+    STEP 1: Generate a destination image and gather key information
+    - ALWAYS call the generate_image tool DIRECTLY with the exact destination name:
+      ```python
+      destination = "Brazil"  # Extract the exact destination from user query
+      destination_image = generate_image(prompt=destination)
+      print(f"Generated image of {destination}")
+      ```
+    
     STEP 2: Get weather information and visa requirements
     STEP 3: Get currency information and cultural information
     STEP 4: Get recommendations and create the final comprehensive answer
@@ -85,34 +91,43 @@ def create_coordinator_prompt_templates():
     # Your code for this particular step
     # Don't try to do everything at once - break it down
     
+    # Print results to show progress
+    print(result)
+    
     # Use final_answer ONLY in the final step
     ```
     
-    When creating the comprehensive answer, use clear formatting with proper headings and spacing:
+    When creating the comprehensive answer in the final step, use clear formatting with proper spacing:
     
-    ```
-    ## Welcome to [Destination]!
+    ```python
+    comprehensive_answer = f'''
+    {str(destination_image)}
+    
+    ## Welcome to {destination}!
     
     Here's what you should know about visiting:
     
-    [Key Information]
+    {info}
     
     ### Weather Information:
-    [Weather details formatted nicely]
+    {weather}
     
     ### Visa Requirements:
-    [Visa details with clear bullet points if applicable]
+    {visa_info}
     
     ### Currency:
-    [Currency information]
+    {currency_info}
     
     ### Cultural Information:
-    [Cultural information with clear paragraphs]
+    {cultural_info}
     
     ### Top Destinations and Activities:
-    [Well-formatted recommendations with bullet points]
+    {recommendations}
     
-    [Destination] is a wonderful place to visit with its unique attractions and experiences. Enjoy your trip!
+    {destination} is a wonderful place to visit with its vibrant culture, stunning landscapes, and warm hospitality. Enjoy your trip!
+    '''
+    
+    final_answer(comprehensive_answer)
     ```
     
     For GENERAL queries about your capabilities, features, or non-destination topics, DO NOT generate images.
@@ -123,13 +138,7 @@ def create_coordinator_prompt_templates():
     print(result)  # Always print the result to show progress
     ```
     
-    CRITICAL: When providing the final answer, use the final_answer tool with properly formatted content:
-    ```python
-    final_answer(comprehensive_answer)
-    ```
-    
-    Remember to provide a thorough, enthusiastic response that covers all aspects of the user's travel query,
-    but show your work step by step so the user can see the progress.
+    REMEMBER: Show your progress step by step so the user can see what's happening at each stage.
     """
     
     return {"system_prompt": system_prompt}
@@ -144,11 +153,12 @@ def create_multi_agent_system():
     model = create_model()
     tools = initialize_tools()
     
-    # Create specialized agents with corrected names
+    # Create specialized agents with correct tool assignments
     information_retrieval_agent = CodeAgent(
         model=model,
         tools=[tools['web_search'], tools['visit_webpage']], 
         max_steps=3,
+        verbosity_level=1,
         name="information_retrieval_agent",
         description="Finds and extracts relevant travel information from the web",
     )
@@ -157,6 +167,7 @@ def create_multi_agent_system():
         model=model,
         tools=[tools['translate_phrase']],
         max_steps=2,
+        verbosity_level=1,
         name="language_culture_agent",
         description="Provides language assistance and cultural context for travelers",
     )
@@ -170,6 +181,7 @@ def create_multi_agent_system():
             tools['convert_currency']
         ],
         max_steps=4,
+        verbosity_level=1,
         name="logistics_agent",
         description="Manages practical travel information",
     )
@@ -178,6 +190,7 @@ def create_multi_agent_system():
         model=model,
         tools=[tools['search_accommodations']],
         max_steps=3,
+        verbosity_level=1,
         name="recommendation_agent",
         description="Creates destination descriptions and suggests activities",
     )
@@ -189,8 +202,8 @@ def create_multi_agent_system():
         model=model,
         tools=[tools['final_answer'], tools['generate_image']],
         managed_agents=[information_retrieval_agent, language_culture_agent, logistics_agent, recommendation_agent],
-        max_steps=8,  # Increased to allow for step-by-step execution
-        verbosity_level=1,  # Ensure we see each step
+        max_steps=8,
+        verbosity_level=1,
         name="Journi",
         description="Your AI Travel Companion",
         prompt_templates=prompt_templates
