@@ -44,10 +44,10 @@ def create_model():
 def initialize_tools():
     """Initialize all tools used by the agents."""
     return {
-        'final_answer': FinalAnswerTool(),  # Updated to handle images
+        'final_answer': FinalAnswerTool(),
         'web_search': DuckDuckGoSearchTool(max_results=5),
         'visit_webpage': VisitWebpageTool(),
-        'generate_destination_preview': GenerateDestinationPreviewTool(),  # Updated to generate images
+        'generate_destination_preview': GenerateDestinationPreviewTool(),
         'get_local_time': GetLocalTimeTool(),
         'get_weather_forecast': GetWeatherForecastTool(),
         'convert_currency': ConvertCurrencyTool(),
