@@ -34,109 +34,62 @@ def pull_messages_from_step(
     if isinstance(step_log, ActionStep):
         # Output the step number
         step_number = f"Step {step_log.step_number}" if step_log.step_number is not None else ""
-        yield gr.ChatMessage(role="assistant", content=f"**{step_number}**")
-
-        # First yield the thought/reasoning from the LLM
+        
+        # Check if we're starting a new step - bundle everything into a single message
+        thought_content = ""
+        code_content = ""
+        
+        # First extract the thought/reasoning from the LLM
         if hasattr(step_log, "model_output") and step_log.model_output is not None:
             # Clean up the LLM output
             model_output = step_log.model_output.strip()
-            # Extract the thought process more clearly
+            
+            # Extract the thought process
             thought_match = re.search(r"Thought:(.*?)(?:Code:|$)", model_output, re.DOTALL)
             if thought_match:
                 thought_content = thought_match.group(1).strip()
-                yield gr.ChatMessage(role="assistant", content=f"💭 **Thinking:** {thought_content}")
             
-            # Remove any trailing <end_code> and extra backticks, handling multiple possible formats
-            model_output = re.sub(r"```\s*<end_code>", "```", model_output)  # handles ```<end_code>
-            model_output = re.sub(r"<end_code>\s*```", "```", model_output)  # handles <end_code>```
-            model_output = re.sub(r"```\s*\n\s*<end_code>", "```", model_output)  # handles ```\n<end_code>
-            model_output = model_output.strip()
+            # Extract the code
+            code_match = re.search(r"Code:\s*```(?:python|py)?\s*(.*?)(?:```|<end_code>)", model_output, re.DOTALL)
+            if code_match:
+                code_content = code_match.group(1).strip()
             
-            # Additional content beyond thought - show the full reasoning
-            yield gr.ChatMessage(role="assistant", content=model_output)
+            # Create a single step message with thought and code
+            if step_number:
+                step_content = f"**{step_number}**\n\nThought: {thought_content}\n\nCode:\n```python\n{code_content}\n```"
+                yield gr.ChatMessage(role="assistant", content=step_content)
 
-        # For tool calls, create a parent message
+        # For tool calls, handle them directly
         if hasattr(step_log, "tool_calls") and step_log.tool_calls is not None:
             first_tool_call = step_log.tool_calls[0]
-            used_code = first_tool_call.name == "python_interpreter"
-            parent_id = f"call_{len(step_log.tool_calls)}"
-
-            # Tool call becomes the parent message with timing info
-            # First we will handle arguments based on type
-            args = first_tool_call.arguments
-            if isinstance(args, dict):
-                content = str(args.get("answer", str(args)))
-            else:
-                content = str(args).strip()
-
-            if used_code:
-                # Clean up the content by removing any end code tags
-                content = re.sub(r"```.*?\n", "", content)  # Remove existing code blocks
-                content = re.sub(r"\s*<end_code>\s*", "", content)  # Remove end_code tags
-                content = content.strip()
-                if not content.startswith("```python"):
-                    content = f"```python\n{content}\n```"
-
-            parent_message_tool = gr.ChatMessage(
-                role="assistant",
-                content=content,
-                metadata={
-                    "title": f"🛠️ Used tool {first_tool_call.name}",
-                    "id": parent_id,
-                    "status": "pending",
-                },
-            )
-            yield parent_message_tool
-
-            # Nesting execution logs under the tool call if they exist
+            tool_name = first_tool_call.name
+            
+            # Handle observations directly - this creates the bubble with results
             if hasattr(step_log, "observations") and (
                 step_log.observations is not None and step_log.observations.strip()
-            ):  # Only yield execution logs if there's actual content
+            ):
                 log_content = step_log.observations.strip()
                 if log_content:
+                    # Remove "Execution logs:" prefix if present
                     log_content = re.sub(r"^Execution logs:\s*", "", log_content)
-                    # Format the output to make it more readable
-                    if "Generated image" in log_content or "result" in log_content.lower():
-                        yield gr.ChatMessage(
-                            role="assistant",
-                            content=f"✅ **Result:** {log_content}",
-                            metadata={"title": "📝 Results", "parent_id": parent_id, "status": "done"},
-                        )
+                    
+                    # Format the output based on content type
+                    if "Generated image" in log_content:
+                        yield gr.ChatMessage(role="assistant", content=log_content)
+                    elif tool_name in ["web_search", "visit_webpage"]:
+                        yield gr.ChatMessage(role="assistant", content=f"**Search Results:**\n\n{log_content}")
                     else:
-                        yield gr.ChatMessage(
-                            role="assistant",
-                            content=f"{log_content}",
-                            metadata={"title": "📝 Execution Logs", "parent_id": parent_id, "status": "done"},
-                        )
-
-            # Nesting any errors under the tool call
+                        yield gr.ChatMessage(role="assistant", content=log_content)
+            
+            # Handle errors
             if hasattr(step_log, "error") and step_log.error is not None:
-                yield gr.ChatMessage(
-                    role="assistant",
-                    content=str(step_log.error),
-                    metadata={"title": "💥 Error", "parent_id": parent_id, "status": "done"},
-                )
-
-            # Update parent message metadata to done status without yielding a new message
-            parent_message_tool.metadata["status"] = "done"
+                yield gr.ChatMessage(role="assistant", content=f"**Error:** {str(step_log.error)}")
 
         # Handle standalone errors but not from tool calls
         elif hasattr(step_log, "error") and step_log.error is not None:
-            yield gr.ChatMessage(role="assistant", content=str(step_log.error), metadata={"title": "💥 Error"})
-
-        # Calculate duration and token information
-        step_footnote = f"{step_number}"
-        if hasattr(step_log, "input_token_count") and hasattr(step_log, "output_token_count"):
-            token_str = (
-                f" | Input-tokens:{step_log.input_token_count:,} | Output-tokens:{step_log.output_token_count:,}"
-            )
-            step_footnote += token_str
-        if hasattr(step_log, "duration"):
-            step_duration = f" | Duration: {round(float(step_log.duration), 2)}" if step_log.duration else None
-            step_footnote += step_duration
-        step_footnote = f"""<span style="color: #bbbbc2; font-size: 12px;">{step_footnote}</span> """
-        yield gr.ChatMessage(role="assistant", content=f"{step_footnote}")
-        yield gr.ChatMessage(role="assistant", content="-----")
+            yield gr.ChatMessage(role="assistant", content=f"**Error:** {str(step_log.error)}")
+            
+        # Don't show step footers or separators to keep the display cleaner and more like in the screenshots
 
 
 def stream_to_gradio(
@@ -155,10 +108,10 @@ def stream_to_gradio(
     total_input_tokens = 0
     total_output_tokens = 0
 
-    # For MAS, add a message explaining that multiple agents will work together
+    # For MAS, add a welcome message
     yield gr.ChatMessage(
         role="assistant", 
-        content="🧳 **I'm Journi, your AI travel companion!** I'll use multiple specialized agents to help you plan your perfect trip. Watch as I gather information step by step..."
+        content="🧳 **I'm Journi, your AI travel companion!** I'll use multiple specialized agents to help you plan your perfect trip."
     )
 
     for step_log in agent.run(task, stream=True, reset=reset_agent_memory, additional_args=additional_args):
