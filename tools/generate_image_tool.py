@@ -19,11 +19,12 @@ class GenerateImageTool(Tool):
         )
     
     def forward(self, prompt: str) -> Any:
-        # Enhance the prompt for better results
-        enhanced_prompt = f"A photorealistic travel photo of {prompt}, high quality, professional photography"
+        # Create a more detailed prompt with specific landmarks if available
+        destination = prompt.strip()
+        enhanced_prompt = f"A beautiful, photorealistic travel photo of {destination}, showing iconic landmarks and distinctive scenery, high-quality professional travel photography"
         
         try:
-            # Generate the image and return the path directly
+            # Generate the image
             image_path = self.image_generator(enhanced_prompt)
             return AgentImage(image_path)  # Return as AgentImage directly
         except Exception as e:
