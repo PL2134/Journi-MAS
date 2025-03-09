@@ -26,12 +26,8 @@ class GenerateDestinationPreviewTool(Tool):
             # Generate the image
             image_path = self.image_generator(prompt)
             
-            # Return as an AgentImage with additional context
-            return {
-                "image": AgentImage(image_path),
-                "destination": destination,
-                "prompt": prompt
-            }
+            # Return the image path directly - simplify the return structure
+            return image_path
         except Exception as e:
             # Return error message if image generation fails
             return f"Could not generate image for {destination}: {str(e)}"
