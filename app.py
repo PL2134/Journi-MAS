@@ -66,7 +66,7 @@ def create_coordinator_prompt_templates():
     and delegate these tasks to the appropriate specialized agents.
     
     You have access to these specialized agents:
-    1. information_retrieval_agent - For web search and visiting webpages
+    1. information_retrieval_agent - For web search, visiting webpages, and generating travel images
     2. language_culture_agent - For translations and cultural information
     3. logistics_agent - For time, weather, visas, and currency
     4. recommendation_agent - For destination previews, accommodation searches, and activities
@@ -77,10 +77,10 @@ def create_coordinator_prompt_templates():
     print(result)
     ```
     
-    For example:
+    IMPORTANT: For image generation of destinations, use the information_retrieval_agent with a specific instruction:
     ```python
-    info = information_retrieval_agent(task="Find the best time to visit Kyoto")
-    print(info)
+    image_result = information_retrieval_agent(task="Generate an image of [destination]")
+    print(image_result)
     ```
     
     Your overall task is to:
@@ -116,10 +116,10 @@ def create_multi_agent_system():
     # Create specialized agents with corrected names matching what will be used in calls
     information_retrieval_agent = CodeAgent(
         model=model,
-        tools=[tools['web_search'], tools['visit_webpage']],
+        tools=[tools['web_search'], tools['visit_webpage'], tools['generate_destination_preview']],  # Add this tool
         max_steps=3,
         name="information_retrieval_agent",
-        description="Finds and extracts relevant travel information from the web",
+        description="Finds and extracts relevant travel information from the web and generates images",
     )
     
     language_culture_agent = CodeAgent(
