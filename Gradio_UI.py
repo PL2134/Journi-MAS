@@ -295,8 +295,6 @@ class GradioUI:
                 ),
                 resizeable=True,
                 scale=1,
-                show_copy_button=True,
-                likeable=True,
             )
             # If an upload folder is provided, enable the upload feature
             if self.file_upload_folder is not None:
