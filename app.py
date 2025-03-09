@@ -153,12 +153,12 @@ def create_multi_agent_system():
     model = create_model()
     tools = initialize_tools()
     
-    # Create specialized agents with correct tool assignments
+    # Create specialized agents with correct tool assignments and increased verbosity
     information_retrieval_agent = CodeAgent(
         model=model,
         tools=[tools['web_search'], tools['visit_webpage']], 
         max_steps=3,
-        verbosity_level=1,
+        verbosity_level=2,  # Increased verbosity to show thought process
         name="information_retrieval_agent",
         description="Finds and extracts relevant travel information from the web",
     )
@@ -167,7 +167,7 @@ def create_multi_agent_system():
         model=model,
         tools=[tools['translate_phrase']],
         max_steps=2,
-        verbosity_level=1,
+        verbosity_level=2,  # Increased verbosity to show thought process
         name="language_culture_agent",
         description="Provides language assistance and cultural context for travelers",
     )
@@ -181,7 +181,7 @@ def create_multi_agent_system():
             tools['convert_currency']
         ],
         max_steps=4,
-        verbosity_level=1,
+        verbosity_level=2,  # Increased verbosity to show thought process
         name="logistics_agent",
         description="Manages practical travel information",
     )
@@ -190,7 +190,7 @@ def create_multi_agent_system():
         model=model,
         tools=[tools['search_accommodations']],
         max_steps=3,
-        verbosity_level=1,
+        verbosity_level=2,  # Increased verbosity to show thought process
         name="recommendation_agent",
         description="Creates destination descriptions and suggests activities",
     )
@@ -203,7 +203,7 @@ def create_multi_agent_system():
         tools=[tools['final_answer'], tools['generate_image']],
         managed_agents=[information_retrieval_agent, language_culture_agent, logistics_agent, recommendation_agent],
         max_steps=8,
-        verbosity_level=1,
+        verbosity_level=2,  # Increased verbosity to show thought process
         name="Journi",
         description="Your AI Travel Companion",
         prompt_templates=prompt_templates

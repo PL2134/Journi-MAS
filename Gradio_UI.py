@@ -40,11 +40,19 @@ def pull_messages_from_step(
         if hasattr(step_log, "model_output") and step_log.model_output is not None:
             # Clean up the LLM output
             model_output = step_log.model_output.strip()
+            # Extract the thought process more clearly
+            thought_match = re.search(r"Thought:(.*?)(?:Code:|$)", model_output, re.DOTALL)
+            if thought_match:
+                thought_content = thought_match.group(1).strip()
+                yield gr.ChatMessage(role="assistant", content=f"💭 **Thinking:** {thought_content}")
+            
             # Remove any trailing <end_code> and extra backticks, handling multiple possible formats
             model_output = re.sub(r"```\s*<end_code>", "```", model_output)  # handles ```<end_code>
             model_output = re.sub(r"<end_code>\s*```", "```", model_output)  # handles <end_code>```
             model_output = re.sub(r"```\s*\n\s*<end_code>", "```", model_output)  # handles ```\n<end_code>
             model_output = model_output.strip()
+            
+            # Additional content beyond thought - show the full reasoning
             yield gr.ChatMessage(role="assistant", content=model_output)
 
         # For tool calls, create a parent message
@@ -87,11 +95,19 @@ def pull_messages_from_step(
                 log_content = step_log.observations.strip()
                 if log_content:
                     log_content = re.sub(r"^Execution logs:\s*", "", log_content)
-                    yield gr.ChatMessage(
-                        role="assistant",
-                        content=f"{log_content}",
-                        metadata={"title": "📝 Execution Logs", "parent_id": parent_id, "status": "done"},
-                    )
+                    # Format the output to make it more readable
+                    if "Generated image" in log_content or "result" in log_content.lower():
+                        yield gr.ChatMessage(
+                            role="assistant",
+                            content=f"✅ **Result:** {log_content}",
+                            metadata={"title": "📝 Results", "parent_id": parent_id, "status": "done"},
+                        )
+                    else:
+                        yield gr.ChatMessage(
+                            role="assistant",
+                            content=f"{log_content}",
+                            metadata={"title": "📝 Execution Logs", "parent_id": parent_id, "status": "done"},
+                        )
 
             # Nesting any errors under the tool call
             if hasattr(step_log, "error") and step_log.error is not None:
@@ -138,6 +154,12 @@ def stream_to_gradio(
 
     total_input_tokens = 0
     total_output_tokens = 0
+
+    # For MAS, add a message explaining that multiple agents will work together
+    yield gr.ChatMessage(
+        role="assistant", 
+        content="🧳 **I'm Journi, your AI travel companion!** I'll use multiple specialized agents to help you plan your perfect trip. Watch as I gather information step by step..."
+    )
 
     for step_log in agent.run(task, stream=True, reset=reset_agent_memory, additional_args=additional_args):
         # Track tokens if model provides them
@@ -265,7 +287,7 @@ class GradioUI:
             stored_messages = gr.State([])
             file_uploads_log = gr.State([])
             chatbot = gr.Chatbot(
-                label="Agent",
+                label="Journi - Your AI Travel Companion",
                 type="messages",
                 avatar_images=(
                     None,
@@ -273,6 +295,8 @@ class GradioUI:
                 ),
                 resizeable=True,
                 scale=1,
+                show_copy_button=True,
+                likeable=True,
             )
             # If an upload folder is provided, enable the upload feature
             if self.file_upload_folder is not None:
@@ -283,7 +307,7 @@ class GradioUI:
                     [upload_file, file_uploads_log],
                     [upload_status, file_uploads_log],
                 )
-            text_input = gr.Textbox(lines=1, label="Chat Message")
+            text_input = gr.Textbox(lines=1, label="Chat Message", placeholder="Ask about any destination or travel information...")
             text_input.submit(
                 self.log_user_message,
                 [text_input, file_uploads_log],
