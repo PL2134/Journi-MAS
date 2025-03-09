@@ -78,27 +78,45 @@ def create_coordinator_prompt_templates():
     1. When the user explicitly asks for an image/picture of a place
     2. When the user expresses they want to go to/visit/travel to a specific destination
     
-    For destination queries, ALWAYS start your response with a generated image, then follow with details:
+    For destination queries, ALWAYS include an image, but do it in a SINGLE final_answer call:
     ```python
-    # First generate and show the image
-    destination_image = generate_image(prompt="[destination name]")
-    final_answer(destination_image)
+    # First generate the image
+    destination_image = generate_image(prompt="[destination name], iconic landmarks, distinctive scenery")
     
-    # Then gather and provide detailed information
+    # Then gather detailed information
     info = information_retrieval_agent(task="Find key information about [destination]")
     weather = logistics_agent(task="Get weather information for [destination]")
-    # etc...
+    visa_info = logistics_agent(task="Get visa requirements for [destination]")
+    currency_info = logistics_agent(task="Get currency information for [destination]")
+    cultural_info = language_culture_agent(task="Provide cultural information about [destination]")
+    recommendations = recommendation_agent(task="Recommend top destinations and activities in [destination]")
     
+    # Combine everything in ONE final_answer call
     comprehensive_answer = f\"\"\"
+    ![Visual preview of {destination_image}]({destination_image})
+    
     ## Welcome to [Destination]!
     
     Here's what you should know about visiting:
     
     {info}
     
+    ### Weather Information:
     {weather}
     
-    ... other information ...
+    ### Visa Requirements:
+    {visa_info}
+    
+    ### Currency:
+    {currency_info}
+    
+    ### Cultural Information:
+    {cultural_info}
+    
+    ### Top Destinations and Activities:
+    {recommendations}
+    
+    [Destination] is a wonderful place to visit with its unique attractions and experiences. Enjoy your trip!
     \"\"\"
     final_answer(comprehensive_answer)
     ```
@@ -113,7 +131,7 @@ def create_coordinator_prompt_templates():
     
     Your overall task is to:
     1. Analyze the user's request to determine what information they need
-    2. For destination queries, always start with a visual image
+    2. For destination queries, always include a visual image in your response
     3. Delegate appropriate tasks to the specialized agents using the correct format
     4. Combine the responses into a well-structured, comprehensive answer
     5. Use the final_answer tool to return the complete response to the user
