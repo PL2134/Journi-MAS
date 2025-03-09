@@ -1,16 +1,9 @@
 # Journi - Multi-Agent Travel Assistant System
 # This system coordinates multiple specialized agents to help travelers with 
-# comprehensive travel planning and information gathering.
-#
-# The system consists of these specialized agents:
-# 1. Coordinator Agent - Orchestrates workflow and delegates tasks
-# 2. Information Retrieval Agent - Handles web search and webpage visits
-# 3. Language & Culture Agent - Provides translations and cultural information
-# 4. Logistics Agent - Manages time, weather, visas, and currency conversion
-# 5. Recommendation Agent - Creates destination descriptions, accommodation recommendations, and activity suggestions
+# comprehensive travel planning and information gathering, with step-by-step display.
 
 from smolagents import CodeAgent, HfApiModel, load_tool
-from smolagents import Tool as SmolTool  # Adding this for image generation
+from smolagents import Tool as SmolTool
 import datetime
 import yaml
 import os
@@ -47,7 +40,7 @@ def initialize_tools():
         'final_answer': FinalAnswerTool(),
         'web_search': DuckDuckGoSearchTool(max_results=5),
         'visit_webpage': VisitWebpageTool(),
-        'generate_image': GenerateImageTool(),  # Add the new tool
+        'generate_image': GenerateImageTool(),
         'get_local_time': GetLocalTimeTool(),
         'get_weather_forecast': GetWeatherForecastTool(),
         'convert_currency': ConvertCurrencyTool(),
@@ -74,54 +67,52 @@ def create_coordinator_prompt_templates():
     You also have a direct tool:
     - generate_image - Creates a visual image of any destination or travel scene
     
-    IMPORTANT: Use the generate_image tool in these two scenarios:
-    1. When the user explicitly asks for an image/picture of a place
-    2. When the user expresses they want to go to/visit/travel to a specific destination
+    IMPORTANT: Your output should be step-by-step, showing progress at each stage. Each step should be
+    self-contained and include your thought process before executing the code.
     
-    For any destination query, identify the exact destination name that the user mentioned and use this format:
+    For any destination query, identify the exact destination name and follow this step-by-step approach:
+    
+    STEP 1: Start with generating a destination image and gathering key information
+    STEP 2: Get weather information and visa requirements
+    STEP 3: Get currency information and cultural information
+    STEP 4: Get recommendations and create the final comprehensive answer
+    
+    For each step, use this format:
     ```python
-    # Extract the specific destination from user query
-    destination = "Exact destination name from user query"  # e.g., "Paris", "Taiwan", "New York City"
+    # STEP X: Brief description of what you're doing in this step
+    print("Thought: Explain your reasoning and what you plan to do in this step...")
     
-    # First generate the image with specific destination
-    destination_image = generate_image(prompt=destination)
+    # Your code for this particular step
+    # Don't try to do everything at once - break it down
     
-    # Then gather detailed information using the exact same destination name
-    info = information_retrieval_agent(task="Find key information about " + destination)
-    weather = logistics_agent(task="Get weather information for " + destination)
-    visa_info = logistics_agent(task="Get visa requirements for " + destination)
-    currency_info = logistics_agent(task="Get currency information for " + destination)
-    cultural_info = language_culture_agent(task="Provide cultural information about " + destination)
-    recommendations = recommendation_agent(task="Recommend top destinations and activities in " + destination)
+    # Use final_answer ONLY in the final step
+    ```
     
-    # Combine everything in ONE final_answer call
-    comprehensive_answer = '''
-    ''' + str(destination_image) + '''
+    When creating the comprehensive answer, use clear formatting with proper headings and spacing:
     
-    ## Welcome to ''' + destination + '''!
+    ```
+    ## Welcome to [Destination]!
     
     Here's what you should know about visiting:
     
-    ''' + info + '''
+    [Key Information]
     
     ### Weather Information:
-    ''' + weather + '''
+    [Weather details formatted nicely]
     
     ### Visa Requirements:
-    ''' + visa_info + '''
+    [Visa details with clear bullet points if applicable]
     
     ### Currency:
-    ''' + currency_info + '''
+    [Currency information]
     
     ### Cultural Information:
-    ''' + cultural_info + '''
+    [Cultural information with clear paragraphs]
     
     ### Top Destinations and Activities:
-    ''' + recommendations + '''
+    [Well-formatted recommendations with bullet points]
     
-    ''' + destination + ''' is a wonderful place to visit with its unique attractions and experiences. Enjoy your trip!
-    '''
-    final_answer(comprehensive_answer)
+    [Destination] is a wonderful place to visit with its unique attractions and experiences. Enjoy your trip!
     ```
     
     For GENERAL queries about your capabilities, features, or non-destination topics, DO NOT generate images.
@@ -129,26 +120,16 @@ def create_coordinator_prompt_templates():
     IMPORTANT: To delegate a task to a managed agent, use this format:
     ```python
     result = information_retrieval_agent(task="Your detailed task description here")
-    print(result)
+    print(result)  # Always print the result to show progress
     ```
     
-    Your overall task is to:
-    1. Analyze the user's request to determine what information they need
-    2. For destination queries, always include a visual image in your response
-    3. Delegate appropriate tasks to the specialized agents using the correct format
-    4. Combine the responses into a well-structured, comprehensive answer
-    5. Use the final_answer tool to return the complete response to the user
-    
-    CRITICAL: When providing the final answer, you MUST use the final_answer tool inside a code block with the correct format:
+    CRITICAL: When providing the final answer, use the final_answer tool with properly formatted content:
     ```python
-    comprehensive_answer = "Your detailed travel information here"
     final_answer(comprehensive_answer)
-    ```<end_code>
+    ```
     
-    ALWAYS end your code blocks with ```<end_code> - this is essential to properly execute your code.
-    NEVER try to provide a direct text response without using the final_answer tool in code.
-    
-    Remember to provide a thorough, enthusiastic response that covers all aspects of the user's travel query.
+    Remember to provide a thorough, enthusiastic response that covers all aspects of the user's travel query,
+    but show your work step by step so the user can see the progress.
     """
     
     return {"system_prompt": system_prompt}
@@ -163,13 +144,13 @@ def create_multi_agent_system():
     model = create_model()
     tools = initialize_tools()
     
-    # Create specialized agents with corrected names matching what will be used in calls
+    # Create specialized agents with corrected names
     information_retrieval_agent = CodeAgent(
         model=model,
         tools=[tools['web_search'], tools['visit_webpage']], 
         max_steps=3,
         name="information_retrieval_agent",
-        description="Finds and extracts relevant travel information from the web and generates images",
+        description="Finds and extracts relevant travel information from the web",
     )
     
     language_culture_agent = CodeAgent(
@@ -198,7 +179,7 @@ def create_multi_agent_system():
         tools=[tools['search_accommodations']],
         max_steps=3,
         name="recommendation_agent",
-        description="Creates destination descriptions, searches real accommodations, and suggests activities",
+        description="Creates destination descriptions and suggests activities",
     )
     
     # Create coordinator agent with custom prompt templates and managed agents
@@ -206,9 +187,10 @@ def create_multi_agent_system():
     
     coordinator_agent = CodeAgent(
         model=model,
-        tools=[tools['final_answer'], tools['generate_image']],  # Add generate_image here
+        tools=[tools['final_answer'], tools['generate_image']],
         managed_agents=[information_retrieval_agent, language_culture_agent, logistics_agent, recommendation_agent],
-        max_steps=8,
+        max_steps=8,  # Increased to allow for step-by-step execution
+        verbosity_level=1,  # Ensure we see each step
         name="Journi",
         description="Your AI Travel Companion",
         prompt_templates=prompt_templates
@@ -220,7 +202,7 @@ def create_multi_agent_system():
 
 if __name__ == "__main__":
     print("✈️ Launching Journi - Multi-Agent AI Travel Companion")
-    print("Ask me about any destination, real accommodation searches, local time, weather, currency conversion, or travel phrases!")
+    print("Ask me about any destination, local time, weather, currency conversion, or travel phrases!")
     
     # Create multi-agent system
     multi_agent_system = create_multi_agent_system()
