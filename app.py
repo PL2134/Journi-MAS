@@ -10,6 +10,7 @@
 # 5. Recommendation Agent - Creates destination descriptions, accommodation recommendations, and activity suggestions
 
 from smolagents import CodeAgent, HfApiModel, load_tool
+from smolagents import Tool as SmolTool  # Adding this for image generation
 import datetime
 import yaml
 import os
@@ -43,10 +44,10 @@ def create_model():
 def initialize_tools():
     """Initialize all tools used by the agents."""
     return {
-        'final_answer': FinalAnswerTool(),
+        'final_answer': FinalAnswerTool(),  # Updated to handle images
         'web_search': DuckDuckGoSearchTool(max_results=5),
         'visit_webpage': VisitWebpageTool(),
-        'generate_destination_preview': GenerateDestinationPreviewTool(),
+        'generate_destination_preview': GenerateDestinationPreviewTool(),  # Updated to generate images
         'get_local_time': GetLocalTimeTool(),
         'get_weather_forecast': GetWeatherForecastTool(),
         'convert_currency': ConvertCurrencyTool(),
