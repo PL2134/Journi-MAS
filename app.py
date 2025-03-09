@@ -77,10 +77,10 @@ def create_coordinator_prompt_templates():
     print(result)
     ```
     
-    IMPORTANT: For image generation of destinations, use the information_retrieval_agent with a specific instruction:
+    IMPORTANT: For image generation of destinations, use this format and pass the result directly to final_answer:
     ```python
     image_result = information_retrieval_agent(task="Generate an image of [destination]")
-    print(image_result)
+    final_answer(image_result)  # Important: Pass the image result directly to final_answer, don't create a text response
     ```
     
     Your overall task is to:
