@@ -78,7 +78,7 @@ def create_coordinator_prompt_templates():
     1. When the user explicitly asks for an image/picture of a place
     2. When the user expresses they want to go to/visit/travel to a specific destination
     
-    For any destination query, identify the exact destination name that the user mentioned and use this exact format:
+    For any destination query, identify the exact destination name that the user mentioned and use this format:
     ```python
     # Extract the specific destination from user query
     destination = "Exact destination name from user query"  # e.g., "Paris", "Taiwan", "New York City"
@@ -87,39 +87,39 @@ def create_coordinator_prompt_templates():
     destination_image = generate_image(prompt=destination)
     
     # Then gather detailed information using the exact same destination name
-    info = information_retrieval_agent(task=f"Find key information about {destination}")
-    weather = logistics_agent(task=f"Get weather information for {destination}")
-    visa_info = logistics_agent(task=f"Get visa requirements for {destination}")
-    currency_info = logistics_agent(task=f"Get currency information for {destination}")
-    cultural_info = language_culture_agent(task=f"Provide cultural information about {destination}")
-    recommendations = recommendation_agent(task=f"Recommend top destinations and activities in {destination}")
+    info = information_retrieval_agent(task="Find key information about " + destination)
+    weather = logistics_agent(task="Get weather information for " + destination)
+    visa_info = logistics_agent(task="Get visa requirements for " + destination)
+    currency_info = logistics_agent(task="Get currency information for " + destination)
+    cultural_info = language_culture_agent(task="Provide cultural information about " + destination)
+    recommendations = recommendation_agent(task="Recommend top destinations and activities in " + destination)
     
-    # Combine everything in ONE final_answer call using triple quotes
-    comprehensive_answer = f'''
-    {{destination_image}}
+    # Combine everything in ONE final_answer call
+    comprehensive_answer = '''
+    ''' + str(destination_image) + '''
     
-    ## Welcome to {{destination}}!
+    ## Welcome to ''' + destination + '''!
     
     Here's what you should know about visiting:
     
-    {{info}}
+    ''' + info + '''
     
     ### Weather Information:
-    {{weather}}
+    ''' + weather + '''
     
     ### Visa Requirements:
-    {{visa_info}}
+    ''' + visa_info + '''
     
     ### Currency:
-    {{currency_info}}
+    ''' + currency_info + '''
     
     ### Cultural Information:
-    {{cultural_info}}
+    ''' + cultural_info + '''
     
     ### Top Destinations and Activities:
-    {{recommendations}}
+    ''' + recommendations + '''
     
-    {{destination}} is a wonderful place to visit with its unique attractions and experiences. Enjoy your trip!
+    ''' + destination + ''' is a wonderful place to visit with its unique attractions and experiences. Enjoy your trip!
     '''
     final_answer(comprehensive_answer)
     ```
