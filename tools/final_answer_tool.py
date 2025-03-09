@@ -1,6 +1,7 @@
 from typing import Any, Optional
 from smolagents.tools import Tool
 from smolagents.agent_types import AgentImage
+import re
 
 class FinalAnswerTool(Tool):
     name = "final_answer"
@@ -16,7 +17,7 @@ class FinalAnswerTool(Tool):
         if isinstance(answer, AgentImage):
             return answer
             
-        # Handle image dictionary from GenerateDestinationPreviewTool
+        # Handle image dictionary from image generation tools
         if isinstance(answer, dict) and 'image' in answer and isinstance(answer['image'], AgentImage):
             image = answer['image']
             destination = answer.get('destination', 'destination')
@@ -25,37 +26,51 @@ class FinalAnswerTool(Tool):
             caption = f"✨ Visual preview of {destination} ✨"
             return f"{caption}\n\n{image.to_string()}"
         
-        # Check if the answer is an image path
-        elif isinstance(answer, str) and ('/tmp/gradio/' in answer or answer.endswith(('.png', '.jpg', '.jpeg', '.webp'))):
-            # Extract destination from the path if possible
-            destination = "destination"
-            path_parts = answer.split('/')
-            if len(path_parts) > 0:
-                # Try to extract something meaningful from the filename
-                filename = path_parts[-1].lower()
-                if 'japan' in filename:
-                    destination = 'Japan'
-                elif 'paris' in filename:
-                    destination = 'Paris'
-                elif 'tokyo' in filename:
-                    destination = 'Tokyo'
-                elif 'york' in filename:
-                    destination = 'New York'
-                elif 'london' in filename:
-                    destination = 'London'
-                elif 'rome' in filename:
-                    destination = 'Rome'
-                # Add more destinations as needed
+        # Check if answer contains both image path and destination information
+        if isinstance(answer, str):
+            # Look for image paths in the text
+            image_path_match = re.search(r'(/tmp/gradio/[^\s\]]+\.(?:png|jpg|jpeg|webp))', answer)
             
-            # Create image with caption
-            image = AgentImage(answer)
-            caption = f"✨ Visual preview of {destination} ✨"
-            return f"{caption}\n\n{image.to_string()}"
+            if image_path_match:
+                image_path = image_path_match.group(1)
+                
+                # Try to extract destination from the text
+                # First look for markdown format: ![Visual preview of Destination](path)
+                destination_match = re.search(r'!\[Visual preview of ([^\]]+)\]', answer)
+                if destination_match:
+                    destination = destination_match.group(1)
+                # Then look for "Welcome to Destination!" format
+                elif "Welcome to " in answer:
+                    welcome_match = re.search(r'Welcome to ([^!]+)!', answer)
+                    if welcome_match:
+                        destination = welcome_match.group(1).strip()
+                else:
+                    # Default if no destination found
+                    destination = "this destination"
+                
+                # Create image with caption
+                image = AgentImage(image_path)
+                caption = f"✨ Visual preview of {destination} ✨"
+                
+                # Replace the image path/markdown with the proper image display
+                modified_answer = answer.replace(image_path_match.group(0), "")
+                # Also remove any markdown image syntax
+                modified_answer = re.sub(r'!\[Visual preview of [^\]]+\]\([^)]+\)', "", modified_answer)
+                
+                # Remove multiple newlines
+                modified_answer = re.sub(r'\n{3,}', '\n\n', modified_answer)
+                
+                return f"{caption}\n\n{image.to_string()}\n\n{modified_answer.strip()}"
             
-        # Format text answers for better readability (keep existing behavior)
-        elif isinstance(answer, str):
-            if "Travel summary" not in answer and "Detailed travel information" not in answer:
-                # Add structure if not already present
+            # Handle direct image paths
+            elif answer.startswith('/tmp/gradio/') or answer.endswith(('.png', '.jpg', '.jpeg', '.webp')):
+                # Just create a generic caption for direct image paths
+                image = AgentImage(answer)
+                return image
+            
+            # Format text answers for better readability (keep existing behavior)
+            elif "Travel summary" not in answer and "Detailed travel information" not in answer:
+                # Your existing text formatting code
                 sections = answer.split("\n\n")
                 formatted_answer = "### Travel summary (short version):\n"
                 
