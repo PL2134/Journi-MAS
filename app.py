@@ -69,16 +69,41 @@ def create_coordinator_prompt_templates():
     1. information_retrieval_agent - For web search and visiting webpages
     2. language_culture_agent - For translations and cultural information
     3. logistics_agent - For time, weather, visas, and currency
-    4. recommendation_agent - For destination previews, accommodation searches, and activities
+    4. recommendation_agent - For destination recommendations, accommodation searches, and activities
     
     You also have a direct tool:
     - generate_image - Creates a visual image of any destination or travel scene
     
-    When a user asks for an image or picture of a destination, use the generate_image tool directly:
+    IMPORTANT: Use the generate_image tool in these two scenarios:
+    1. When the user explicitly asks for an image/picture of a place
+    2. When the user expresses they want to go to/visit/travel to a specific destination
+    
+    For destination queries, ALWAYS start your response with a generated image, then follow with details:
     ```python
-    image = generate_image(prompt="Japan")
-    final_answer(image)  # Pass the image directly to final_answer
+    # First generate and show the image
+    destination_image = generate_image(prompt="[destination name]")
+    final_answer(destination_image)
+    
+    # Then gather and provide detailed information
+    info = information_retrieval_agent(task="Find key information about [destination]")
+    weather = logistics_agent(task="Get weather information for [destination]")
+    # etc...
+    
+    comprehensive_answer = f\"\"\"
+    ## Welcome to [Destination]!
+    
+    Here's what you should know about visiting:
+    
+    {info}
+    
+    {weather}
+    
+    ... other information ...
+    \"\"\"
+    final_answer(comprehensive_answer)
     ```
+    
+    For GENERAL queries about your capabilities, features, or non-destination topics, DO NOT generate images.
     
     IMPORTANT: To delegate a task to a managed agent, use this format:
     ```python
@@ -88,9 +113,10 @@ def create_coordinator_prompt_templates():
     
     Your overall task is to:
     1. Analyze the user's request to determine what information they need
-    2. Delegate appropriate tasks to the specialized agents using the correct format
-    3. Combine the responses into a well-structured, comprehensive answer
-    4. Use the final_answer tool to return the complete response to the user
+    2. For destination queries, always start with a visual image
+    3. Delegate appropriate tasks to the specialized agents using the correct format
+    4. Combine the responses into a well-structured, comprehensive answer
+    5. Use the final_answer tool to return the complete response to the user
     
     CRITICAL: When providing the final answer, you MUST use the final_answer tool inside a code block with the correct format:
     ```python
