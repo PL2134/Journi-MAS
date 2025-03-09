@@ -47,7 +47,7 @@ def initialize_tools():
         'final_answer': FinalAnswerTool(),
         'web_search': DuckDuckGoSearchTool(max_results=5),
         'visit_webpage': VisitWebpageTool(),
-        'generate_destination_preview': GenerateDestinationPreviewTool(),
+        'generate_image': GenerateImageTool(),  # Add the new tool
         'get_local_time': GetLocalTimeTool(),
         'get_weather_forecast': GetWeatherForecastTool(),
         'convert_currency': ConvertCurrencyTool(),
@@ -66,21 +66,24 @@ def create_coordinator_prompt_templates():
     and delegate these tasks to the appropriate specialized agents.
     
     You have access to these specialized agents:
-    1. information_retrieval_agent - For web search, visiting webpages, and generating travel images
+    1. information_retrieval_agent - For web search and visiting webpages
     2. language_culture_agent - For translations and cultural information
     3. logistics_agent - For time, weather, visas, and currency
     4. recommendation_agent - For destination previews, accommodation searches, and activities
+    
+    You also have a direct tool:
+    - generate_image - Creates a visual image of any destination or travel scene
+    
+    When a user asks for an image or picture of a destination, use the generate_image tool directly:
+    ```python
+    image = generate_image(prompt="Japan")
+    final_answer(image)  # Pass the image directly to final_answer
+    ```
     
     IMPORTANT: To delegate a task to a managed agent, use this format:
     ```python
     result = information_retrieval_agent(task="Your detailed task description here")
     print(result)
-    ```
-    
-    IMPORTANT: For image generation of destinations, use this format and pass the result directly to final_answer:
-    ```python
-    image_result = information_retrieval_agent(task="Generate an image of [destination]")
-    final_answer(image_result)  # Important: Pass the image result directly to final_answer, don't create a text response
     ```
     
     Your overall task is to:
@@ -116,7 +119,7 @@ def create_multi_agent_system():
     # Create specialized agents with corrected names matching what will be used in calls
     information_retrieval_agent = CodeAgent(
         model=model,
-        tools=[tools['web_search'], tools['visit_webpage'], tools['generate_destination_preview']],  # Add this tool
+        tools=[tools['web_search'], tools['visit_webpage']], 
         max_steps=3,
         name="information_retrieval_agent",
         description="Finds and extracts relevant travel information from the web and generates images",
@@ -145,7 +148,7 @@ def create_multi_agent_system():
     
     recommendation_agent = CodeAgent(
         model=model,
-        tools=[tools['generate_destination_preview'], tools['search_accommodations']],
+        tools=[tools['search_accommodations']],
         max_steps=3,
         name="recommendation_agent",
         description="Creates destination descriptions, searches real accommodations, and suggests activities",
@@ -156,7 +159,7 @@ def create_multi_agent_system():
     
     coordinator_agent = CodeAgent(
         model=model,
-        tools=[tools['final_answer']],
+        tools=[tools['final_answer'], tools['generate_image']],  # Add generate_image here
         managed_agents=[information_retrieval_agent, language_culture_agent, logistics_agent, recommendation_agent],
         max_steps=8,
         name="Journi",
